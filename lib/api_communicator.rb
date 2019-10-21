@@ -2,10 +2,33 @@ require 'rest-client'
 require 'json'
 require 'pry'
 
+def api_to_string(api_link)
+  RestClient.get(api_link)
+end
+
+def json_to_hash(api_link)
+  api_string = api_to_string(api_link)
+  JSON.parse(api_string)
+end
+
+def find_character_from_api(character_name)
+  response_hash = json_to_hash('http://www.swapi.co/api/people/')
+  response_hash["results"].find do |character|
+    character["name"].downcase == character_name.downcase
+  end
+end
+
 def get_character_movies_from_api(character_name)
   #make the web request
-  response_string = RestClient.get('http://www.swapi.co/api/people/')
-  response_hash = JSON.parse(response_string)
+
+  character_hash = find_character_from_api(character_name)
+
+  if character_hash
+    character_hash["films"].map do |apilink|
+      film_string = RestClient.get(apilink)
+      JSON.parse(film_string)
+    end
+  end
 
   # iterate over the response hash to find the collection of `films` for the given
   #   `character`
@@ -20,6 +43,11 @@ end
 
 def print_movies(films)
   # some iteration magic and puts out the movies in a nice list
+  if films
+    films.each do |film|
+      puts "#{film["title"]} | #{film["release_date"]}"
+    end
+  end
 end
 
 def show_character_movies(character)
